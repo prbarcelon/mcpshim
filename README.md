@@ -1,38 +1,113 @@
-# mcpshim
+<p align="center">
+	<img src="https://mcpshim.dev/icon.svg" alt="mcpshim" width="80" height="80" />
+</p>
 
-`mcpshim` is a daemon + CLI bridge that turns remote MCP servers into local command workflows.
+<h1 align="center">mcpshim</h1>
 
-Website: https://mcpshim.dev
-Repository: https://github.com/mcpshim/mcpshim
+<p align="center">
+	<strong>Turn remote MCP servers into local command workflows.</strong><br/>
+	A lightweight daemon + CLI bridge that centralizes MCP sessions, auth, discovery, and tool execution behind one local Unix socket.
+</p>
 
-- `mcpshimd` keeps the Unix socket and MCP registry alive
-- `mcpshim` configures servers and invokes tools
-- server registration is config-driven
-- aliases let you call `notion <tool> --flag value` style commands
+<p align="center">
+	<a href="https://mcpshim.dev">Website</a> · <a href="https://github.com/mcpshim/mcpshim">Repository</a> · <a href="#quick-start">Quick Start</a> · <a href="#core-commands">Core Commands</a>
+</p>
 
-## The problem
+---
 
-Remote MCP servers are useful, but each one can require different auth patterns, transport details, and invocation conventions. Wiring all of that directly into every script or agent loop makes command workflows brittle.
+## The Problem
 
-There is also a context pollution problem for LLM agents: every additional MCP tool definition consumes prompt context before any real work happens.
+Remote MCP servers are powerful, but each service has its own auth flow, transport expectations, and invocation patterns. Wiring all of that directly into every script or agent loop creates brittle command workflows.
 
-## The solution
+For LLM agents, there is also context pressure: dumping raw MCP schemas for every connected server can consume prompt budget before useful work begins.
 
-`mcpshimd` centralizes MCP lifecycle concerns (connection/session, auth flow, discovery, retries), while `mcpshim` provides a consistent CLI surface over a Unix socket.
+## The Solution
 
-Instead of pushing endless raw MCP tool metadata into the model context, `mcpshim` registers MCP capabilities as simple local commands. Agents can invoke only what they need, when they need it, with lower context overhead.
+`mcpshimd` handles MCP lifecycle concerns in one place: session management, discovery, retries, and OAuth flow.
 
-## Quick start
+`mcpshim` provides a stable CLI surface over a local Unix socket so tools can be called consistently, with dynamic flags translated to MCP arguments at runtime.
 
-```bash
-cp configs/mcpshim.example.yaml ~/.config/mcpshim/config.yaml
-mcpshimd
-mcpshim servers
-mcpshim tools
-mcpshim call --server notion --tool search --query "roadmap"
+```mermaid
+graph TD
+		Agent["Your AI Agent / Script"]
+		Agent -->|call| CLI["mcpshim CLI"]
+		Agent -->|JSON request| Socket["Unix Socket"]
+		CLI --> Socket
+		Socket --> Daemon["mcpshimd"]
+		Daemon --> MCP1["MCP Server: Notion"]
+		Daemon --> MCP2["MCP Server: GitHub"]
+		Daemon --> MCP3["MCP Server: Linear"]
+		Daemon --> MCPN["..."]
 ```
 
-Path defaults:
+## Why mcpshim
+
+|                          | Without mcpshim               | With mcpshim                        |
+| ------------------------ | ----------------------------- | ----------------------------------- |
+| **MCP integration**      | Custom per-server wiring      | One daemon + one CLI                |
+| **Auth handling**        | Per-script OAuth/header logic | Centralized in `mcpshimd`           |
+| **Tool invocation**      | Provider-specific conventions | `mcpshim call --server --tool ...`  |
+| **Agent context budget** | Large MCP schemas in prompt   | Alias-based local command workflows |
+| **Operational history**  | Ad-hoc logging                | Built-in call history in SQLite     |
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mcpshim/mcpshim&type=date&legend=top-left)](https://www.star-history.com/#mcpshim/mcpshim&type=date&legend=top-left)
+
+---
+
+## Architecture
+
+| Component  | Role                                                              |
+| ---------- | ----------------------------------------------------------------- |
+| `mcpshimd` | Local daemon for MCP registry, sessions, auth, retries, and IPC   |
+| `mcpshim`  | CLI client for config, discovery, tool calls, history, and script |
+
+All client calls go through a Unix socket and JSON request/response protocol.
+
+## Source Layout
+
+```
+cmd/
+	mcpshimd/             # Daemon entry point
+	mcpshim/              # CLI entry point
+configs/
+	mcpshim.example.yaml  # Example configuration
+internal/
+	client/               # CLI command handling and IPC client logic
+	config/               # Config loading and defaults
+	mcp/                  # MCP transport + OAuth handling
+	protocol/             # Request/response protocol types
+	server/               # Daemon runtime and routing
+	store/                # SQLite persistence
+```
+
+## Quick Start
+
+### 1. Install from source
+
+```bash
+go install github.com/mcpshim/mcpshim/cmd/mcpshimd@latest
+go install github.com/mcpshim/mcpshim/cmd/mcpshim@latest
+```
+
+### 2. Configure
+
+```bash
+mkdir -p ~/.config/mcpshim
+cp configs/mcpshim.example.yaml ~/.config/mcpshim/config.yaml
+```
+
+### 3. Start daemon and inspect
+
+```bash
+mcpshimd
+mcpshim status
+mcpshim servers
+mcpshim tools
+```
+
+### Path Defaults
 
 | Resource | Default Location                    | Override                        |
 | -------- | ----------------------------------- | ------------------------------- |
@@ -42,21 +117,7 @@ Path defaults:
 
 All paths follow XDG defaults where applicable.
 
-Install from source:
-
-```bash
-go install github.com/mcpshim/mcpshim/cmd/mcpshimd@latest
-go install github.com/mcpshim/mcpshim/cmd/mcpshim@latest
-```
-
-Validate config:
-
-```bash
-mcpshim validate
-mcpshim validate --config /path/to/config.yaml
-```
-
-Daemon flags:
+### Daemon flags
 
 | Flag        | Description               |
 | ----------- | ------------------------- |
@@ -65,7 +126,26 @@ Daemon flags:
 | `--debug`   | Enable debug logging      |
 | `--version` | Print version and exit    |
 
-## Register MCPs
+---
+
+## Core Commands
+
+| Command                                               | Description                      |
+| ----------------------------------------------------- | -------------------------------- |
+| `mcpshim servers`                                     | List registered MCP servers      |
+| `mcpshim tools [--server name] [--full]`              | List tools for all or one server |
+| `mcpshim inspect --server s --tool t`                 | Show tool schema/details         |
+| `mcpshim call --server s --tool t --arg value`        | Execute a tool call              |
+| `mcpshim add --name s --url ... [--alias a]`          | Register a new MCP endpoint      |
+| `mcpshim set auth --server s --header K=V`            | Set auth headers for a server    |
+| `mcpshim remove --name s`                             | Remove a registered server       |
+| `mcpshim reload`                                      | Reload daemon configuration      |
+| `mcpshim validate [--config path]`                    | Validate config file             |
+| `mcpshim login --server s [--manual]`                 | Complete OAuth login flow        |
+| `mcpshim history [--server s] [--tool t] [--limit n]` | Show persisted call history      |
+| `mcpshim script [--install] [--dir ~/.local/bin]`     | Generate/install alias wrappers  |
+
+### Register MCP servers
 
 ```bash
 mcpshim add --name notion --alias notion --transport http --url https://example.com/mcp
@@ -73,46 +153,42 @@ mcpshim set auth --server notion --header "Authorization=Bearer $NOTION_MCP_TOKE
 mcpshim reload
 ```
 
-OAuth-only MCPs can be configured with URL only:
+### Dynamic flags
 
-```bash
-mcpshim add --name notion --alias notion --transport http --url https://mcp.notion.com/mcp
-```
-
-When a server returns `401` and no `Authorization` header is configured, `mcpshimd` automatically attempts OAuth:
-
-- starts a temporary local callback server
-- opens the authorization URL in your browser
-- exchanges code for token and saves it in SQLite (`oauth_tokens` table)
-- retries the MCP request automatically
-
-You can pre-authorize explicitly:
-
-```bash
-mcpshim login --server notion
-```
-
-For cross-device login (browser on a different machine):
-
-```bash
-mcpshim login --server notion --manual
-```
-
-This prints the authorization URL. Open it anywhere, complete auth, then paste the final redirect URL (or just the `code`) back into the CLI prompt.
-
-## Dynamic flags
-
-CLI flags are converted automatically to MCP tool arguments:
+Tool flags are converted automatically to MCP arguments:
 
 ```bash
 mcpshim call --server notion --tool search --query "projects" --limit 10 --archived false
 ```
 
-## Call history
+> Tip: JSON output is automatic when stdout is not a terminal. Use `--json` to force JSON parsing behavior in interactive sessions.
+
+---
+
+## OAuth Flow
+
+For OAuth-capable MCP servers, you can configure URL-only registration:
+
+```bash
+mcpshim add --name notion --alias notion --transport http --url https://mcp.notion.com/mcp
+```
+
+When a request receives `401` and no `Authorization` header is configured, `mcpshimd` can initiate OAuth login, store tokens in SQLite (`oauth_tokens`), and retry automatically.
+
+You can also pre-authorize:
+
+```bash
+mcpshim login --server notion
+mcpshim login --server notion --manual
+```
+
+`--manual` supports cross-device auth by printing a URL and accepting pasted callback URL/code.
+
+---
+
+## Call History
 
 Every `mcpshim call` is recorded by `mcpshimd` with timestamp, server/tool, args, status, and duration.
-
-History rows are stored in SQLite (`call_history` table).
 
 ```bash
 mcpshim history
@@ -120,11 +196,13 @@ mcpshim history --server notion --limit 20
 mcpshim history --server notion --tool search --limit 100
 ```
 
-> Tip: JSON output is automatic when stdout is not a terminal. Use `--json` to force JSON output in interactive sessions.
+History is stored locally in SQLite (`call_history` table).
 
-## IPC protocol
+---
 
-`mcpshim` talks to `mcpshimd` over a Unix socket using JSON messages with an `action` field.
+## IPC Protocol
+
+`mcpshim` communicates with `mcpshimd` over a Unix socket using JSON messages with an `action` field.
 
 ```json
 {"action":"status"}
@@ -138,7 +216,9 @@ mcpshim history --server notion --tool search --limit 100
 {"action":"reload"}
 ```
 
-## Lightweight aliases
+---
+
+## Lightweight Aliases
 
 Generate shell functions:
 
@@ -147,7 +227,7 @@ eval "$(mcpshim script)"
 notion search --query "projects" --limit 10
 ```
 
-Install executable wrapper scripts instead:
+Install executable wrappers instead:
 
 ```bash
 mcpshim script --install --dir ~/.local/bin

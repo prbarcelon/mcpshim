@@ -8,12 +8,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/mcpshim/mcpshim/internal/config"
-	"github.com/mcpshim/mcpshim/internal/protocol"
-	"github.com/mcpshim/mcpshim/internal/store"
 	mcpclient "github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"
 	mcpproto "github.com/mark3labs/mcp-go/mcp"
+	"github.com/mcpshim/mcpshim/internal/config"
+	"github.com/mcpshim/mcpshim/internal/protocol"
+	"github.com/mcpshim/mcpshim/internal/store"
 )
 
 type Registry struct {
@@ -236,10 +236,10 @@ func parseSchema(schema interface{}) ([]string, []string) {
 
 func parseSchemaDetail(schema interface{}, requiredList []string) []protocol.PropertyDetail {
 	type propEntry struct {
-		Type        string `json:"type"`
+		Type        string        `json:"type"`
 		Enum        []interface{} `json:"enum"`
-		Const       interface{} `json:"const"`
-		Description string `json:"description"`
+		Const       interface{}   `json:"const"`
+		Description string        `json:"description"`
 	}
 	type inputSchema struct {
 		Properties map[string]propEntry `json:"properties"`

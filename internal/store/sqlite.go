@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/mcpshim/mcpshim/internal/protocol"
 	mcpclient "github.com/mark3labs/mcp-go/client"
+	"github.com/mcpshim/mcpshim/internal/protocol"
 
 	_ "github.com/mattn/go-sqlite3"
 )

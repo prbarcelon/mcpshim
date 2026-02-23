@@ -32,12 +32,12 @@ type ToolInfo struct {
 }
 
 type PropertyDetail struct {
-	Name        string `json:"name"`
-	Type        string `json:"type,omitempty"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type,omitempty"`
 	Enum        []string `json:"enum,omitempty"`
-	Const       string `json:"const,omitempty"`
-	Description string `json:"description,omitempty"`
-	Required    bool   `json:"required"`
+	Const       string   `json:"const,omitempty"`
+	Description string   `json:"description,omitempty"`
+	Required    bool     `json:"required"`
 }
 
 type ToolDetail struct {
@@ -65,13 +65,13 @@ type HistoryItem struct {
 }
 
 type Response struct {
-	OK         bool         `json:"ok"`
-	Error      string       `json:"error,omitempty"`
-	Status     *Status      `json:"status,omitempty"`
-	Servers    []ServerInfo `json:"servers,omitempty"`
-	Tools      []ToolInfo   `json:"tools,omitempty"`
+	OK         bool          `json:"ok"`
+	Error      string        `json:"error,omitempty"`
+	Status     *Status       `json:"status,omitempty"`
+	Servers    []ServerInfo  `json:"servers,omitempty"`
+	Tools      []ToolInfo    `json:"tools,omitempty"`
 	History    []HistoryItem `json:"history,omitempty"`
-	ToolDetail *ToolDetail  `json:"tool_detail,omitempty"`
-	Result     interface{}  `json:"result,omitempty"`
-	Text       string       `json:"text,omitempty"`
+	ToolDetail *ToolDetail   `json:"tool_detail,omitempty"`
+	Result     interface{}   `json:"result,omitempty"`
+	Text       string        `json:"text,omitempty"`
 }

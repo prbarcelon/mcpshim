@@ -42,6 +42,7 @@ jobs:
           CGO_ENABLED: '0'
         run: |
           VERSION="${GITHUB_REF_NAME}"
+          LDFLAGS="-s -w"
           EXT=""
           if [ "$GOOS" = "windows" ]; then EXT=".exe"; fi
 
@@ -50,7 +51,7 @@ jobs:
 
           for cmd in mcpshim mcpshimd; do
             echo "Building ${cmd}..."
-            go build -trimpath -o "${OUTDIR}/${cmd}${EXT}" "./cmd/${cmd}"
+            go build -trimpath -ldflags "${LDFLAGS}" -o "${OUTDIR}/${cmd}${EXT}" "./cmd/${cmd}"
           done
 
           cp configs/mcpshim.example.yaml "${OUTDIR}/mcpshim.example.yaml"
