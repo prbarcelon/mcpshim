@@ -183,10 +183,11 @@ func validate(cfg *Config) error {
 		if s.Name == "" {
 			return errors.New("server name is required")
 		}
-		if _, err := normalizeTransport(s.Transport); err != nil {
+		transport, err := normalizeTransport(s.Transport)
+		if err != nil {
 			return fmt.Errorf("server %q: %w", s.Name, err)
 		}
-		if s.Transport == "stdio" {
+		if transport == "stdio" {
 			if len(s.Command) == 0 {
 				return fmt.Errorf("server %q command is required for stdio transport", s.Name)
 			}
