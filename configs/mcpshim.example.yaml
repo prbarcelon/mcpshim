@@ -15,3 +15,8 @@ servers:
     url: https://mcp.example.com/sse
     headers:
       Authorization: Bearer ${TOKEN}
+
+  - name: local-tools
+    transport: stdio
+    command: ["python", "-m", "my_mcp_server"]
+    env: ["PYTHONPATH=/app"]

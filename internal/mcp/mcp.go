@@ -47,6 +47,8 @@ func (r *Registry) Servers() []protocol.ServerInfo {
 			URL:       s.URL,
 			Transport: s.Transport,
 			HasAuth:   hasAuthorizationHeader(s.Headers),
+			Command:   s.Command,
+			Env:       s.Env,
 		})
 	}
 	return out
@@ -180,6 +182,9 @@ func (r *Registry) Login(ctx context.Context, server string, manual bool) error 
 	if !ok {
 		return fmt.Errorf("unknown server %q", server)
 	}
+	if s.Transport == "stdio" {
+		return fmt.Errorf("server %q uses stdio transport; oauth login is not applicable", s.Name)
+	}
 
 	return runOAuthLogin(ctx, s, r.store, manual)
 }
@@ -297,7 +302,17 @@ type compatibleClient interface {
 
 func newClient(s config.MCPServer) (compatibleClient, func(), error) {
 	var cli compatibleClient
-	if s.Transport == "sse" {
+	switch s.Transport {
+	case "stdio":
+		if len(s.Command) == 0 {
+			return nil, nil, fmt.Errorf("stdio server %q has no command configured", s.Name)
+		}
+		c, err := mcpclient.NewStdioMCPClient(s.Command[0], s.Env, s.Command[1:]...)
+		if err != nil {
+			return nil, nil, err
+		}
+		cli = c
+	case "sse":
 		headers := map[string]string{}
 		for k, v := range s.Headers {
 			headers[k] = v
@@ -311,7 +326,7 @@ func newClient(s config.MCPServer) (compatibleClient, func(), error) {
 			return nil, nil, err
 		}
 		cli = c
-	} else {
+	default:
 		opts := []transport.StreamableHTTPCOption{}
 		headers := map[string]string{}
 		for k, v := range s.Headers {

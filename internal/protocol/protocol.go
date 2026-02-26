@@ -12,15 +12,19 @@ type Request struct {
 	URL       string                 `json:"url,omitempty"`
 	Transport string                 `json:"transport,omitempty"`
 	Headers   map[string]string      `json:"headers,omitempty"`
+	Command   []string               `json:"command,omitempty"`
+	Env       []string               `json:"env,omitempty"`
 	Args      map[string]interface{} `json:"args,omitempty"`
 }
 
 type ServerInfo struct {
-	Name      string `json:"name"`
-	Alias     string `json:"alias,omitempty"`
-	URL       string `json:"url"`
-	Transport string `json:"transport"`
-	HasAuth   bool   `json:"has_auth"`
+	Name      string   `json:"name"`
+	Alias     string   `json:"alias,omitempty"`
+	URL       string   `json:"url,omitempty"`
+	Transport string   `json:"transport"`
+	HasAuth   bool     `json:"has_auth"`
+	Command   []string `json:"command,omitempty"`
+	Env       []string `json:"env,omitempty"`
 }
 
 type ToolInfo struct {
