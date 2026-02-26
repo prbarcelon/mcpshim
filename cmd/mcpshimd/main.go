@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/mcpshim/mcpshim/internal/config"
-	"github.com/mcpshim/mcpshim/internal/server"
+	"github.com/prbarcelon/mcpshim/internal/config"
+	"github.com/prbarcelon/mcpshim/internal/server"
 )
 
 func main() {

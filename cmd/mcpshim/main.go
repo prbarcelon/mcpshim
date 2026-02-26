@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/mcpshim/mcpshim/internal/client"
+	"github.com/prbarcelon/mcpshim/internal/client"
 )
 
 func main() {

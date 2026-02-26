@@ -1,4 +1,4 @@
-module github.com/mcpshim/mcpshim
+module github.com/prbarcelon/mcpshim
 
 go 1.25.7
 

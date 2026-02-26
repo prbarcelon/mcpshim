@@ -15,10 +15,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/mcpshim/mcpshim/internal/config"
-	"github.com/mcpshim/mcpshim/internal/mcp"
-	"github.com/mcpshim/mcpshim/internal/protocol"
-	"github.com/mcpshim/mcpshim/internal/store"
+	"github.com/prbarcelon/mcpshim/internal/config"
+	"github.com/prbarcelon/mcpshim/internal/mcp"
+	"github.com/prbarcelon/mcpshim/internal/protocol"
+	"github.com/prbarcelon/mcpshim/internal/store"
 )
 
 type Server struct {

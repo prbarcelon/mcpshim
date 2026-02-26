@@ -6,7 +6,7 @@ import (
 
 	"github.com/mark3labs/mcp-go/client"
 	"github.com/mark3labs/mcp-go/client/transport"
-	"github.com/mcpshim/mcpshim/internal/store"
+	"github.com/prbarcelon/mcpshim/internal/store"
 )
 
 type sqliteTokenStore struct {

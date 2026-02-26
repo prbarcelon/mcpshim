@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/mcpshim/mcpshim/internal/config"
-	"github.com/mcpshim/mcpshim/internal/protocol"
+	"github.com/prbarcelon/mcpshim/internal/config"
+	"github.com/prbarcelon/mcpshim/internal/protocol"
 )
 
 func TestParseSchema(t *testing.T) {

@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-	<a href="https://mcpshim.dev">Website</a> · <a href="https://github.com/mcpshim/mcpshim">Repository</a> · <a href="#quick-start">Quick Start</a> · <a href="#core-commands">Core Commands</a>
+	<a href="https://mcpshim.dev">Website</a> · <a href="https://github.com/prbarcelon/mcpshim">Repository</a> · <a href="#quick-start">Quick Start</a> · <a href="#core-commands">Core Commands</a>
 </p>
 
 ---
@@ -84,8 +84,8 @@ internal/
 ### 1. Install from source
 
 ```bash
-go install github.com/mcpshim/mcpshim/cmd/mcpshimd@latest
-go install github.com/mcpshim/mcpshim/cmd/mcpshim@latest
+go install github.com/prbarcelon/mcpshim/cmd/mcpshimd@latest
+go install github.com/prbarcelon/mcpshim/cmd/mcpshim@latest
 ```
 
 ### 2. Configure

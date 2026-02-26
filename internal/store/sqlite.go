@@ -9,7 +9,7 @@ import (
 	"time"
 
 	mcpclient "github.com/mark3labs/mcp-go/client"
-	"github.com/mcpshim/mcpshim/internal/protocol"
+	"github.com/prbarcelon/mcpshim/internal/protocol"
 
 	_ "github.com/mattn/go-sqlite3"
 )
