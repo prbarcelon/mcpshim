@@ -5,7 +5,7 @@
 <h1 align="center">mcpshim</h1>
 
 <p align="center">
-	<strong>Turn remote MCP servers into local command workflows.</strong><br/>
+	<strong>Turn remote and local MCP servers into unified command workflows.</strong><br/>
 	A lightweight daemon + CLI bridge that centralizes MCP sessions, auth, discovery, and tool execution behind one local Unix socket.
 </p>
 
@@ -17,7 +17,7 @@
 
 ## The Problem
 
-Remote MCP servers are powerful, but each service has its own auth flow, transport expectations, and invocation patterns. Wiring all of that directly into every script or agent loop creates brittle command workflows.
+MCP servers — whether remote HTTP endpoints or local stdio processes — each have their own auth flow, transport expectations, and invocation patterns. Wiring all of that directly into every script or agent loop creates brittle command workflows.
 
 For LLM agents, there is also context pressure: dumping raw MCP schemas for every connected server can consume prompt budget before useful work begins.
 
@@ -37,6 +37,7 @@ graph TD
 		Daemon --> MCP1["MCP Server: Notion"]
 		Daemon --> MCP2["MCP Server: GitHub"]
 		Daemon --> MCP3["MCP Server: Linear"]
+		Daemon --> MCP4["Local: stdio process"]
 		Daemon --> MCPN["..."]
 ```
 
@@ -132,7 +133,8 @@ All paths follow XDG defaults where applicable.
 | `mcpshim tools [--server name] [--full]`              | List tools for all or one server |
 | `mcpshim inspect --server s --tool t`                 | Show tool schema/details         |
 | `mcpshim call --server s --tool t --arg value`        | Execute a tool call              |
-| `mcpshim add --name s --url ... [--alias a]`          | Register a new MCP endpoint      |
+| `mcpshim add --name s --url ... [--alias a]`          | Register a remote MCP endpoint   |
+| `mcpshim add --name s --transport stdio --command ...` | Register a local stdio server    |
 | `mcpshim set auth --server s --header K=V`            | Set auth headers for a server    |
 | `mcpshim remove --name s`                             | Remove a registered server       |
 | `mcpshim reload`                                      | Reload daemon configuration      |
@@ -144,8 +146,13 @@ All paths follow XDG defaults where applicable.
 ### Register MCP servers
 
 ```bash
+# Remote server (http or sse transport)
 mcpshim add --name notion --alias notion --transport http --url https://example.com/mcp
 mcpshim set auth --server notion --header "Authorization=Bearer $NOTION_MCP_TOKEN"
+
+# Local stdio server
+mcpshim add --name local-tools --transport stdio --command python --command -m --command my_mcp_server --env "PYTHONPATH=/app"
+
 mcpshim reload
 ```
 
@@ -208,6 +215,7 @@ History is stored locally in SQLite (`call_history` table).
 {"action":"call","server":"notion","tool":"search","args":{"query":"roadmap"}}
 {"action":"history","server":"notion","limit":20}
 {"action":"add_server","name":"notion","alias":"notion","url":"https://mcp.notion.com/mcp","transport":"http"}
+{"action":"add_server","name":"local-tools","transport":"stdio","command":["python","-m","my_mcp_server"],"env":["PYTHONPATH=/app"]}
 {"action":"set_auth","name":"notion","headers":{"Authorization":"Bearer ..."}}
 {"action":"reload"}
 ```
