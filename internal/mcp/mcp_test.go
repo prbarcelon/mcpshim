@@ -1,8 +1,11 @@
 package mcp
 
 import (
+	"context"
+	"strings"
 	"testing"
 
+	"github.com/mcpshim/mcpshim/internal/config"
 	"github.com/mcpshim/mcpshim/internal/protocol"
 )
 
@@ -95,6 +98,80 @@ func TestParseSchemaEmpty(t *testing.T) {
 	}
 	if len(props) != 0 {
 		t.Errorf("expected no properties, got %v", props)
+	}
+}
+
+func TestLoginRejectsStdioServer(t *testing.T) {
+	cfg := &config.Config{
+		Servers: []config.MCPServer{
+			{Name: "local", Transport: "stdio", Command: []string{"echo"}},
+		},
+	}
+	reg := NewRegistry(cfg, nil)
+	err := reg.Login(context.Background(), "local", false)
+	if err == nil {
+		t.Fatal("expected error for stdio login, got nil")
+	}
+	if !strings.Contains(err.Error(), "stdio") {
+		t.Errorf("expected error to mention stdio, got: %s", err.Error())
+	}
+}
+
+func TestLoginRejectsUnknownServer(t *testing.T) {
+	cfg := &config.Config{}
+	reg := NewRegistry(cfg, nil)
+	err := reg.Login(context.Background(), "nonexistent", false)
+	if err == nil {
+		t.Fatal("expected error for unknown server, got nil")
+	}
+	if !strings.Contains(err.Error(), "unknown server") {
+		t.Errorf("expected 'unknown server' error, got: %s", err.Error())
+	}
+}
+
+func TestNewClientRejectsEmptyCommand(t *testing.T) {
+	s := config.MCPServer{Name: "empty", Transport: "stdio", Command: []string{}}
+	_, _, err := newClient(s)
+	if err == nil {
+		t.Fatal("expected error for empty command, got nil")
+	}
+	if !strings.Contains(err.Error(), "no command configured") {
+		t.Errorf("expected 'no command configured' error, got: %s", err.Error())
+	}
+}
+
+func TestNewClientRejectsNilCommand(t *testing.T) {
+	s := config.MCPServer{Name: "nilcmd", Transport: "stdio"}
+	_, _, err := newClient(s)
+	if err == nil {
+		t.Fatal("expected error for nil command, got nil")
+	}
+	if !strings.Contains(err.Error(), "no command configured") {
+		t.Errorf("expected 'no command configured' error, got: %s", err.Error())
+	}
+}
+
+func TestServersIncludesEnv(t *testing.T) {
+	cfg := &config.Config{
+		Servers: []config.MCPServer{
+			{
+				Name:      "local",
+				Transport: "stdio",
+				Command:   []string{"echo"},
+				Env:       []string{"FOO=bar"},
+			},
+		},
+	}
+	reg := NewRegistry(cfg, nil)
+	servers := reg.Servers()
+	if len(servers) != 1 {
+		t.Fatalf("expected 1 server, got %d", len(servers))
+	}
+	if len(servers[0].Env) != 1 || servers[0].Env[0] != "FOO=bar" {
+		t.Errorf("expected Env=[FOO=bar], got %v", servers[0].Env)
+	}
+	if len(servers[0].Command) != 1 || servers[0].Command[0] != "echo" {
+		t.Errorf("expected Command=[echo], got %v", servers[0].Command)
 	}
 }
 

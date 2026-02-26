@@ -145,6 +145,9 @@ func shouldTryOAuthFallback(s config.MCPServer, err error) bool {
 	if err == nil {
 		return false
 	}
+	if s.Transport == "stdio" {
+		return false
+	}
 	if hasAuthorizationHeader(s.Headers) {
 		return false
 	}

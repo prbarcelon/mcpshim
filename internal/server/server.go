@@ -192,15 +192,27 @@ func (s *Server) handle(req protocol.Request) protocol.Response {
 		}
 		return protocol.Response{OK: true, Result: result}
 	case "add_server":
-		if req.Name == "" || req.URL == "" {
-			return protocol.Response{OK: false, Error: "name and url are required"}
+		if req.Name == "" {
+			return protocol.Response{OK: false, Error: "name is required"}
+		}
+		transport := strings.ToLower(strings.TrimSpace(req.Transport))
+		if transport == "stdio" {
+			if len(req.Command) == 0 {
+				return protocol.Response{OK: false, Error: "command is required for stdio transport"}
+			}
+		} else {
+			if req.URL == "" {
+				return protocol.Response{OK: false, Error: "url is required for http/sse transport"}
+			}
 		}
 		item := config.MCPServer{
 			Name:      req.Name,
 			Alias:     req.Alias,
 			URL:       req.URL,
-			Transport: req.Transport,
+			Transport: transport,
 			Headers:   req.Headers,
+			Command:   req.Command,
+			Env:       req.Env,
 		}
 		config.UpsertServer(s.cfg, item)
 		if err := config.Save(s.configPath, s.cfg); err != nil {

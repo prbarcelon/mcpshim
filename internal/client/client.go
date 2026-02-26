@@ -32,6 +32,20 @@ func (h *headerArgs) String() string {
 	return strings.Join(parts, ",")
 }
 
+type stringSliceFlag []string
+
+func (s *stringSliceFlag) String() string {
+	if s == nil {
+		return ""
+	}
+	return strings.Join(*s, ",")
+}
+
+func (s *stringSliceFlag) Set(value string) error {
+	*s = append(*s, value)
+	return nil
+}
+
 func (h *headerArgs) Set(value string) error {
 	parts := strings.SplitN(value, "=", 2)
 	if len(parts) != 2 {
@@ -155,14 +169,17 @@ func Run(binaryName string, argv []string) int {
 		fs := flag.NewFlagSet("add", flag.ContinueOnError)
 		var name, alias, url, transport string
 		var headers headerArgs
+		var command, env stringSliceFlag
 		fs.StringVar(&name, "name", "", "server name")
 		fs.StringVar(&alias, "alias", "", "short alias")
 		fs.StringVar(&url, "url", "", "mcp endpoint")
-		fs.StringVar(&transport, "transport", "http", "http|sse")
+		fs.StringVar(&transport, "transport", "http", "http|sse|stdio")
 		fs.Var(&headers, "header", "request header key=value (repeatable)")
+		fs.Var(&command, "command", "command and args for stdio transport (repeatable)")
+		fs.Var(&env, "env", "environment variable KEY=VALUE for stdio transport (repeatable)")
 		_ = fs.Parse(rest)
 		headersMap := map[string]string(headers)
-		resp, err := call(protocol.Request{Action: "add_server", Name: name, Alias: alias, URL: url, Transport: transport, Headers: headersMap}, socketPath)
+		resp, err := call(protocol.Request{Action: "add_server", Name: name, Alias: alias, URL: url, Transport: transport, Headers: headersMap, Command: []string(command), Env: []string(env)}, socketPath)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			return 1
@@ -840,7 +857,11 @@ func printResponse(resp *protocol.Response, jsonOut bool) int {
 		}
 		if len(resp.Servers) > 0 {
 			for _, s := range resp.Servers {
-				fmt.Printf("%s (%s) %s\n", s.Name, s.Transport, s.URL)
+				if s.Transport == "stdio" {
+					fmt.Printf("%s (%s) %s\n", s.Name, s.Transport, strings.Join(s.Command, " "))
+				} else {
+					fmt.Printf("%s (%s) %s\n", s.Name, s.Transport, s.URL)
+				}
 			}
 		}
 		if len(resp.History) > 0 {
@@ -976,7 +997,8 @@ func usage() {
 	fmt.Println("  inspect --server name --tool name")
 	fmt.Println("  call --server name --tool name [--json] [--arg value]")
 	fmt.Println("       use '--' before tool args to pass reserved names (e.g. --help, --server)")
-	fmt.Println("  add --name x --url http://... [--transport http|sse] [--alias short] [--header K=V]")
+	fmt.Println("  add --name x --url http://... [--transport http|sse|stdio] [--alias short] [--header K=V]")
+	fmt.Println("  add --name x --transport stdio --command prog [--command arg] [--env K=V]")
 	fmt.Println("  set auth --server x [--header K=V]")
 	fmt.Println("  remove --name x")
 	fmt.Println("  reload")

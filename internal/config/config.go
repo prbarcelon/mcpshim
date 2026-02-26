@@ -25,9 +25,11 @@ type ServerConfig struct {
 type MCPServer struct {
 	Name      string            `yaml:"name"`
 	Alias     string            `yaml:"alias,omitempty"`
-	URL       string            `yaml:"url"`
+	URL       string            `yaml:"url,omitempty"`
 	Transport string            `yaml:"transport,omitempty"`
 	Headers   map[string]string `yaml:"headers,omitempty"`
+	Command   []string          `yaml:"command,omitempty"`
+	Env       []string          `yaml:"env,omitempty"`
 }
 
 func normalizeTransport(value string) (string, error) {
@@ -36,8 +38,10 @@ func normalizeTransport(value string) (string, error) {
 		return "http", nil
 	case "sse":
 		return "sse", nil
+	case "stdio":
+		return "stdio", nil
 	default:
-		return "", fmt.Errorf("unsupported transport %q (expected http or sse)", value)
+		return "", fmt.Errorf("unsupported transport %q (expected http, sse, or stdio)", value)
 	}
 }
 
@@ -100,6 +104,12 @@ func Load(path string) (*Config, error) {
 			for k, v := range s.Headers {
 				s.Headers[k] = os.ExpandEnv(v)
 			}
+		}
+		for j, v := range s.Command {
+			s.Command[j] = os.ExpandEnv(v)
+		}
+		for j, v := range s.Env {
+			s.Env[j] = os.ExpandEnv(v)
 		}
 		transport, transportErr := normalizeTransport(s.Transport)
 		if transportErr != nil {
@@ -173,11 +183,18 @@ func validate(cfg *Config) error {
 		if s.Name == "" {
 			return errors.New("server name is required")
 		}
-		if s.URL == "" {
-			return fmt.Errorf("server %q url is required", s.Name)
-		}
-		if _, err := normalizeTransport(s.Transport); err != nil {
+		transport, err := normalizeTransport(s.Transport)
+		if err != nil {
 			return fmt.Errorf("server %q: %w", s.Name, err)
+		}
+		if transport == "stdio" {
+			if len(s.Command) == 0 {
+				return fmt.Errorf("server %q command is required for stdio transport", s.Name)
+			}
+		} else {
+			if s.URL == "" {
+				return fmt.Errorf("server %q url is required", s.Name)
+			}
 		}
 		if seen[s.Name] {
 			return fmt.Errorf("duplicate server name %q", s.Name)
