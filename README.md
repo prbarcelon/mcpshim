@@ -132,7 +132,7 @@ All paths follow XDG defaults where applicable.
 | `mcpshim servers`                                     | List registered MCP servers      |
 | `mcpshim tools [--server name] [--full]`              | List tools for all or one server |
 | `mcpshim inspect --server s --tool t`                 | Show tool schema/details         |
-| `mcpshim call --server s --tool t --arg value`        | Execute a tool call              |
+| `mcpshim call --server s --tool t [--param value ...]` | Execute a tool call              |
 | `mcpshim add --name s --url ... [--alias a]`          | Register a remote MCP endpoint   |
 | `mcpshim add --name s --transport stdio --command ...` | Register a local stdio server    |
 | `mcpshim set auth --server s --header K=V`            | Set auth headers for a server    |
